@@ -1,2 +1,2 @@
 build:
-	cc -Wall -Wextra project.c spimcore.c -o project.out
+	gcc -o spimcore spimcore.c project.c -Wall -Wextra
