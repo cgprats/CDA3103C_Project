@@ -5,7 +5,40 @@
 /* 10 Points */
 void ALU(unsigned A,unsigned B,char ALUControl,unsigned *ALUresult,char *Zero)
 {
-
+	switch (ALUControl) {
+		case 0:
+			/* ALU Control: 000
+			 * Addition: Z = A + B */
+			break;
+		case 1:
+			/* ALU Control: 001
+			 * Subtraction: Z = A - B */
+			break;
+		case 2:
+			/* ALU Control: 010
+			 * Comparison: Z = 1 if A < B otherwise Z = 0 */
+			break;
+		case 3:
+			/* ALU Control: 011
+			 * Comparison: Z = 1 if A < B otherwise Z = 0 (Unsigned) */
+			break;
+		case 4:
+			/* ALU Control: 100
+			 * AND: Z = A & B */
+			break;
+		case 5:
+			/* ALU Control: 101
+			 * OR: Z = A | B */
+			break;
+		case 6:
+			/* ALU Control: 110
+			 * SHIFT: Z = B << 16 */
+			break;
+		case 7:
+			/* ALU Control: 111
+			 * Z = ~A */
+			break;
+	}
 }
 
 /* instruction fetch */
