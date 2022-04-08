@@ -57,13 +57,13 @@ void ALU(unsigned A,unsigned B,char ALUControl,unsigned *ALUresult,char *Zero)
 int instruction_fetch(unsigned PC,unsigned *Mem,unsigned *instruction)
 {
 	/* Ensure that the instruction is word-aligned. As the instructions state,
-	 * it must have an address that is a multiple of 4.*/
+	 * it must have an address that is a multiple of 4. Halt if it is not.*/
 	if (!(PC % 4)) return 1;
 
 	/* Get and set the instruction from the Memory array.
 	 * As explained in the FAQ doc, the decimal form of the
 	 * instruction is at the index of PC right shifted by 2 bits
-	 * or divided by 2^2 */
+	 * or divided by 2^2. */
 	*instruction = Mem[(PC >> 2)];
 	return 0;
 }
@@ -75,16 +75,16 @@ void instruction_partition(unsigned instruction, unsigned *op, unsigned *r1,unsi
 {
 	/* As demonstrated in line 41 of spimcore.c The data is stored at the following positions,
 	 * where 0 is the rightmost bit and 31 the leftmost, and has the following constraints:
-	 *| Part    | Bits    | # of Bits | Max decimal value     |
-	 *|---------+---------+-----------+-----------------------+
-	 *| op      | 31 - 26 |  6        |  (2^6) - 1 =       63 |
-	 *| r1      | 25 - 21 |  5        |  (2^5) - 1 =       31 |
-	 *| r2      | 20 - 16 |  5        |  (2^5) - 1 =       31 |
-	 *| r3      | 15 - 11 |  5        |  (2^5) - 1 =       31 |
-	 *| funct   |  5 - 0  |  6        |  (2^6) - 1 =       63 |
-	 *| offset  | 15 - 0  | 16        | (2^16) - 1 =    65535 |
-	 *| jsec    | 25 - 0  | 26        | (2^26) - 1 = 67108863 |
-	 * -------------------------------------------------------+
+	 * | Part    | Bits    | # of Bits | Max decimal value     |
+	 * |---------+---------+-----------+-----------------------|
+	 * | op      | 31 - 26 |  6        |  (2^6) - 1 =       63 |
+	 * | r1      | 25 - 21 |  5        |  (2^5) - 1 =       31 |
+	 * | r2      | 20 - 16 |  5        |  (2^5) - 1 =       31 |
+	 * | r3      | 15 - 11 |  5        |  (2^5) - 1 =       31 |
+	 * | funct   |  5 - 0  |  6        |  (2^6) - 1 =       63 |
+	 * | offset  | 15 - 0  | 16        | (2^16) - 1 =    65535 |
+	 * | jsec    | 25 - 0  | 26        | (2^26) - 1 = 67108863 |
+	 * |-------------------------------------------------------|
 	 * To find the appropriate values from the data listed in the above table, the value of
 	 * instruction is right shifted by the rightmost bit index in order to set the appropriate
 	 * value to the 0th bit position. Then to exclude any extra bits to the left, a bitwise
@@ -105,15 +105,138 @@ void instruction_partition(unsigned instruction, unsigned *op, unsigned *r1,unsi
 /* 15 Points */
 int instruction_decode(unsigned op,struct_controls *controls)
 {
-	char halt = 0;
-	return halt;
+	switch(op) {
+		// R-type instruction
+		case 0:
+			controls->RegDst;
+			controls->Jump;
+			controls->Branch;
+			controls->MemRead;
+			controls->MemtoReg;
+			controls->ALUOp;
+			controls->MemWrite;
+			controls->ALUSrc;
+			controls->RegWrite;
+			break;
+
+		// Jump
+		case 2:
+			controls->RegDst;
+			controls->Jump;
+			controls->Branch;
+			controls->MemRead;
+			controls->MemtoReg;
+			controls->ALUOp;
+			controls->MemWrite;
+			controls->ALUSrc;
+			controls->RegWrite;
+			break;
+
+		// Branch eq
+		case 4:
+			controls->RegDst;
+			controls->Jump;
+			controls->Branch;
+			controls->MemRead;
+			controls->MemtoReg;
+			controls->ALUOp;
+			controls->MemWrite;
+			controls->ALUSrc;
+			controls->RegWrite;
+			break;
+
+		// Add immediate
+		case 8:
+			controls->RegDst;
+			controls->Jump;
+			controls->Branch;
+			controls->MemRead;
+			controls->MemtoReg;
+			controls->ALUOp;
+			controls->MemWrite;
+			controls->ALUSrc;
+			controls->RegWrite;
+			break;
+
+		// Set less than imm
+		case 10:
+			controls->RegDst;
+			controls->Jump;
+			controls->Branch;
+			controls->MemRead;
+			controls->MemtoReg;
+			controls->ALUOp;
+			controls->MemWrite;
+			controls->ALUSrc;
+			controls->RegWrite;
+			break;
+
+		// Set less than imm unsigned
+		case 11:
+			controls->RegDst;
+			controls->Jump;
+			controls->Branch;
+			controls->MemRead;
+			controls->MemtoReg;
+			controls->ALUOp;
+			controls->MemWrite;
+			controls->ALUSrc;
+			controls->RegWrite;
+			break;
+
+		// Load upper imm
+		case 15:
+			controls->RegDst;
+			controls->Jump;
+			controls->Branch;
+			controls->MemRead;
+			controls->MemtoReg;
+			controls->ALUOp;
+			controls->MemWrite;
+			controls->ALUSrc;
+			controls->RegWrite;
+			break;
+
+		// Load word
+		case 35:
+			controls->RegDst;
+			controls->Jump;
+			controls->Branch;
+			controls->MemRead;
+			controls->MemtoReg;
+			controls->ALUOp;
+			controls->MemWrite;
+			controls->ALUSrc;
+			controls->RegWrite;
+			break;
+
+		// Store word
+		case 43:
+			controls->RegDst;
+			controls->Jump;
+			controls->Branch;
+			controls->MemRead;
+			controls->MemtoReg;
+			controls->ALUOp;
+			controls->MemWrite;
+			controls->ALUSrc;
+			controls->RegWrite;
+			break;
+
+		// If invalid value for op, halt.
+		default:
+			return 1;
+	}
+	return 0;
 }
 
 /* Read Register */
 /* 5 Points */
 void read_register(unsigned r1,unsigned r2,unsigned *Reg,unsigned *data1,unsigned *data2)
 {
-
+	// The value of rNum, where Num is a number, points to the index in reg of the data.
+	*data1 = Reg[r1];
+	*data2 = Reg[r2];
 }
 
 
@@ -121,6 +244,22 @@ void read_register(unsigned r1,unsigned r2,unsigned *Reg,unsigned *data1,unsigne
 /* 10 Points */
 void sign_extend(unsigned offset,unsigned *extended_value)
 {
+	// Sign is the 16th bit
+	int sign = offset >> 15;
+
+	/* If sign is 1, value is negative. Left pad the extended_value with 1.
+	 * The value 4294901760 is binary value where 16 leftmost bits are 1
+	 * and 16 rightmost bits are 0. */
+	if (sign) {
+		*extended_value = offset | 4294901760;
+	}
+
+	/* If sign is 0, value is positive. Left pad the extended_value with 0.
+	 * The value 65535 is binary value where 16 leftmost bits are 0 and 16
+	 * rightmost bits are 1. */
+	else {
+		*extended_value = offset & 65535;
+	}
 
 }
 
@@ -128,8 +267,7 @@ void sign_extend(unsigned offset,unsigned *extended_value)
 /* 10 Points */
 int ALU_operations(unsigned data1,unsigned data2,unsigned extended_value,unsigned funct,char ALUOp,char ALUSrc,unsigned *ALUresult,char *Zero)
 {
-	char halt = 0;
-	return halt;
+	return 0;
 }
 
 /* Read / Write Memory */
