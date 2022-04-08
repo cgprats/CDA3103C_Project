@@ -56,15 +56,16 @@ void ALU(unsigned A,unsigned B,char ALUControl,unsigned *ALUresult,char *Zero)
 /* 10 Points */
 int instruction_fetch(unsigned PC,unsigned *Mem,unsigned *instruction)
 {
-	char halt = 0;
+	/* Ensure that the instruction is word-aligned. As the instructions state,
+	 * it must have an address that is a multiple of 4.*/
+	if (!(PC % 4)) return 1;
 
 	/* Get and set the instruction from the Memory array.
-	 * As explained in the FAQ doc, this is stored at the
-	 * index equivalent to PC right shifted by 2 bits
-	 * or divided by 2^2
-	 */
+	 * As explained in the FAQ doc, the decimal form of the
+	 * instruction is at the index of PC right shifted by 2 bits
+	 * or divided by 2^2 */
 	*instruction = Mem[(PC >> 2)];
-	return halt;
+	return 0;
 }
 
 
@@ -72,7 +73,30 @@ int instruction_fetch(unsigned PC,unsigned *Mem,unsigned *instruction)
 /* 10 Points */
 void instruction_partition(unsigned instruction, unsigned *op, unsigned *r1,unsigned *r2, unsigned *r3, unsigned *funct, unsigned *offset, unsigned *jsec)
 {
-
+	/* As demonstrated in line 41 of spimcore.c The data is stored at the following positions,
+	 * where 0 is the rightmost bit and 31 the leftmost, and has the following constraints:
+	 *| Part    | Bits    | # of Bits | Max decimal value     |
+	 *|---------+---------+-----------+-----------------------+
+	 *| op      | 31 - 26 |  6        |  (2^6) - 1 =       63 |
+	 *| r1      | 25 - 21 |  5        |  (2^5) - 1 =       31 |
+	 *| r2      | 20 - 16 |  5        |  (2^5) - 1 =       31 |
+	 *| r3      | 15 - 11 |  5        |  (2^5) - 1 =       31 |
+	 *| funct   |  5 - 0  |  6        |  (2^6) - 1 =       63 |
+	 *| offset  | 15 - 0  | 16        | (2^16) - 1 =    65535 |
+	 *| jsec    | 25 - 0  | 26        | (2^26) - 1 = 67108863 |
+	 * -------------------------------------------------------+
+	 * To find the appropriate values from the data listed in the above table, the value of
+	 * instruction is right shifted by the rightmost bit index in order to set the appropriate
+	 * value to the 0th bit position. Then to exclude any extra bits to the left, a bitwise
+	 * AND is performed with the maximum decimal value that can be stored in that size.
+	 */
+	*op = (instruction >> 26) & 63;
+	*r1 = instruction >> 21 & 31;
+	*r2 = instruction >> 16 & 31;
+	*r3 = instruction >> 11 & 31;
+	*funct = instruction & 63;
+	*offset = instruction & 65535;
+	*jsec = instruction & 67108863;
 }
 
 
