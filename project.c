@@ -19,12 +19,12 @@ void ALU(unsigned A,unsigned B,char ALUControl,unsigned *ALUresult,char *Zero)
 		case 2:
 			/* ALU Control: 010
 			 * Comparison: Z = 1 if A < B otherwise Z = 0 */
-			*ALUresult = (A < B) ? 1 : 0;
+			*ALUresult = ((signed)A < (signed)B) ? 1 : 0;
 			break;
 		case 3:
 			/* ALU Control: 011
 			 * Comparison: Z = 1 if A < B otherwise Z = 0 (Unsigned) */
-			*ALUresult = ((signed)A < (signed)B) ? 1 : 0;
+			*ALUresult = (A < B) ? 1 : 0;
 			break;
 		case 4:
 			/* ALU Control: 100
@@ -252,10 +252,8 @@ void sign_extend(unsigned offset,unsigned *extended_value)
 	 * and 16 rightmost bits are 0. */
 	if (sign) *extended_value = offset | 4294901760;
 
-	/* If sign is 0, value is positive. Left pad the extended_value with 0.
-	 * The value 65535 is binary value where 16 leftmost bits are 0 and 16
-	 * rightmost bits are 1. */
-	else *extended_value = offset & 65535;
+	// If sign is 0, value is positive.
+	else *extended_value = offset;
 }
 
 /* ALU operations */
