@@ -108,15 +108,15 @@ int instruction_decode(unsigned op,struct_controls *controls)
 	switch(op) {
 		// R-type instruction
 		case 0:
-			controls->RegDst;
+			controls->RegDst = 1;
 			controls->Jump;
-			controls->Branch;
-			controls->MemRead;
-			controls->MemtoReg;
+			controls->Branch = 0;
+			controls->MemRead = 0;
+			controls->MemtoReg = 0;
 			controls->ALUOp;
-			controls->MemWrite;
-			controls->ALUSrc;
-			controls->RegWrite;
+			controls->MemWrite = 0;
+			controls->ALUSrc = 0;
+			controls->RegWrite = 1;
 			break;
 
 		// Jump
@@ -134,15 +134,15 @@ int instruction_decode(unsigned op,struct_controls *controls)
 
 		// Branch eq
 		case 4:
-			controls->RegDst;
+			controls->RegDst = 2;
 			controls->Jump;
-			controls->Branch;
-			controls->MemRead;
-			controls->MemtoReg;
+			controls->Branch = 1;
+			controls->MemRead = 0;
+			controls->MemtoReg = 2;
 			controls->ALUOp;
-			controls->MemWrite;
-			controls->ALUSrc;
-			controls->RegWrite;
+			controls->MemWrite = 0;
+			controls->ALUSrc = 0;
+			controls->RegWrite = 0;
 			break;
 
 		// Add immediate
@@ -199,28 +199,28 @@ int instruction_decode(unsigned op,struct_controls *controls)
 
 		// Load word
 		case 35:
-			controls->RegDst;
+			controls->RegDst = 0;
 			controls->Jump;
-			controls->Branch;
-			controls->MemRead;
-			controls->MemtoReg;
+			controls->Branch = 0;
+			controls->MemRead = 1;
+			controls->MemtoReg = 1;
 			controls->ALUOp;
-			controls->MemWrite;
-			controls->ALUSrc;
-			controls->RegWrite;
+			controls->MemWrite = 0;
+			controls->ALUSrc = 1;
+			controls->RegWrite = 1;
 			break;
 
 		// Store word
 		case 43:
-			controls->RegDst;
+			controls->RegDst = 2;
 			controls->Jump;
-			controls->Branch;
-			controls->MemRead;
-			controls->MemtoReg;
+			controls->Branch = 0;
+			controls->MemRead = 0;
+			controls->MemtoReg = 2;
 			controls->ALUOp;
-			controls->MemWrite;
-			controls->ALUSrc;
-			controls->RegWrite;
+			controls->MemWrite = 1;
+			controls->ALUSrc = 1;
+			controls->RegWrite = 0;
 			break;
 
 		// If invalid value for op, halt.
@@ -250,23 +250,84 @@ void sign_extend(unsigned offset,unsigned *extended_value)
 	/* If sign is 1, value is negative. Left pad the extended_value with 1.
 	 * The value 4294901760 is binary value where 16 leftmost bits are 1
 	 * and 16 rightmost bits are 0. */
-	if (sign) {
-		*extended_value = offset | 4294901760;
-	}
+	if (sign) *extended_value = offset | 4294901760;
 
 	/* If sign is 0, value is positive. Left pad the extended_value with 0.
 	 * The value 65535 is binary value where 16 leftmost bits are 0 and 16
 	 * rightmost bits are 1. */
-	else {
-		*extended_value = offset & 65535;
-	}
-
+	else *extended_value = offset & 65535;
 }
 
 /* ALU operations */
 /* 10 Points */
 int ALU_operations(unsigned data1,unsigned data2,unsigned extended_value,unsigned funct,char ALUOp,char ALUSrc,unsigned *ALUresult,char *Zero)
 {
+	// Halt if invalid APU operation
+	if (ALUOp < 0 || ALUOp > 7) return 1;
+
+	// Determine what we have to do when we have an R-type operation using the value of funct.
+	else if (ALUOp == 7) {
+		/* Modify the value of ALUOp based on the value of funct. This is based on the values
+		 * found in the table in the Module 5ppt on slide 108. */
+		switch (funct) {
+			case 4:
+				//Shift left by 16 bits
+				ALUOp = 6;
+				break;
+
+			case 32:
+				// Addition
+				ALUOp = 0;
+				break;
+
+			case 34:
+				// Subtraction
+				ALUOp = 1;
+				break;
+
+			case 36:
+				// AND
+				ALUOp = 4;
+				break;
+
+			case 37:
+				// OR
+				ALUOp = 5;
+				break;
+
+			case 39:
+				// NOT
+				ALUOp = 7;
+				break;
+
+			case 42:
+				// Less than
+				ALUOp = 2;
+				break;
+
+			case 43:
+				// Less than unsigned
+				ALUOp = 3;
+				break;
+
+			// Halt if funct has an invalid value
+			default:
+				return 1;
+		}
+
+		// If ALUSrc is true, second value is extended_value instead of data2.
+		if (ALUSrc) ALU(data1, extended_value, ALUOp, ALUresult, Zero);
+
+		// Perform ALU with data2 as second value.
+		else ALU(data1, data2, ALUOp, ALUresult, Zero);
+	}
+
+	// If ALUSrc is true, second value is extended_value instead of data2.
+	else if (ALUSrc) ALU(data1, extended_value, ALUOp, ALUresult, Zero);
+
+	// Perform ALU with data2 as second value.
+	else ALU(data1, data2, ALUOp, ALUresult, Zero);
+
 	return 0;
 }
 
@@ -274,8 +335,19 @@ int ALU_operations(unsigned data1,unsigned data2,unsigned extended_value,unsigne
 /* 10 Points */
 int rw_memory(unsigned ALUresult,unsigned data2,char MemWrite,char MemRead,unsigned *memdata,unsigned *Mem)
 {
-	char halt = 0;
-	return halt;
+	// Halt if ALUresult is an address and not a multiple of 4.
+	// ALUresult is an address when MemWrite or MemRead is true.
+	if ((MemWrite || MemRead) && (ALUresult % 4)) return 1;
+
+	/* As explained in the FAQ document, indexes are right shifted by 2 bits
+	 * when accessing Mem to reference the proper index. */
+
+	// Write data stored by data2 to Mem index pointed to by ALU result.
+	else if (MemWrite) Mem[ALUresult >> 2] = data2;
+
+	// Write data stored at Mem index pointed to by ALUresult to memdata.
+	else if (MemRead) *memdata = Mem[ALUresult >> 2];
+	return 0;
 }
 
 
@@ -283,13 +355,36 @@ int rw_memory(unsigned ALUresult,unsigned data2,char MemWrite,char MemRead,unsig
 /* 10 Points */
 void write_register(unsigned r2,unsigned r3,unsigned memdata,unsigned ALUresult,char RegWrite,char RegDst,char MemtoReg,unsigned *Reg)
 {
+	// If not writing to register, quit immediately.
+	if (!RegWrite) return;
 
+	// RegDst Value of 0 is r2, 1 is r3.
+	unsigned registers[] = {r2, r3};
+
+	// MemtoReg value of 1 means to write from Memory, value of 0 means to write from ALUresult.
+	unsigned data[] = {ALUresult, memdata};
+
+	// Write the appropriate data to the appropriate register.
+	Reg[registers[RegDst]] = data[MemtoReg];
 }
 
 /* PC update */
 /* 10 Points */
 void PC_update(unsigned jsec,unsigned extended_value,char Branch,char Jump,char Zero,unsigned *PC)
 {
+	// Increment the value of PC by a word
+	*PC += 4;
 
+	// Handle branch when zero value.
+	if (Zero && Branch) {
+		// Add the value of extended value to the PC multiplied by size of word.
+		*PC += (extended_value << 2);
+	}
+
+	// When Jumping, set PC equal to jsec left shifted by 2 and use the 4 upper bits of the value of PC.
+	if (Jump) {
+		// 4026531840 is a 32 bit number, like PC, with only the 4 leftmost bits having a value of 1.
+		*PC = (jsec << 2) | (*PC & 4026531840);
+	}
 }
 
