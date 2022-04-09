@@ -109,11 +109,11 @@ int instruction_decode(unsigned op,struct_controls *controls)
 		// R-type instruction
 		case 0:
 			controls->RegDst = 1;
-			controls->Jump;
+			controls->Jump = 0;
 			controls->Branch = 0;
 			controls->MemRead = 0;
 			controls->MemtoReg = 0;
-			controls->ALUOp;
+			controls->ALUOp = 7;
 			controls->MemWrite = 0;
 			controls->ALUSrc = 0;
 			controls->RegWrite = 1;
@@ -121,25 +121,25 @@ int instruction_decode(unsigned op,struct_controls *controls)
 
 		// Jump
 		case 2:
-			controls->RegDst;
-			controls->Jump;
-			controls->Branch;
-			controls->MemRead;
-			controls->MemtoReg;
-			controls->ALUOp;
-			controls->MemWrite;
-			controls->ALUSrc;
-			controls->RegWrite;
+			controls->RegDst = 0;
+			controls->Jump = 1;
+			controls->Branch = 0;
+			controls->MemRead = 0;
+			controls->MemtoReg = 0;
+			controls->ALUOp = 0;
+			controls->MemWrite = 0;
+			controls->ALUSrc = 0;
+			controls->RegWrite = 0;
 			break;
 
 		// Branch eq
 		case 4:
 			controls->RegDst = 2;
-			controls->Jump;
+			controls->Jump = 0;
 			controls->Branch = 1;
 			controls->MemRead = 0;
 			controls->MemtoReg = 2;
-			controls->ALUOp;
+			controls->ALUOp = 1;
 			controls->MemWrite = 0;
 			controls->ALUSrc = 0;
 			controls->RegWrite = 0;
@@ -147,64 +147,64 @@ int instruction_decode(unsigned op,struct_controls *controls)
 
 		// Add immediate
 		case 8:
-			controls->RegDst;
-			controls->Jump;
-			controls->Branch;
-			controls->MemRead;
-			controls->MemtoReg;
-			controls->ALUOp;
-			controls->MemWrite;
-			controls->ALUSrc;
-			controls->RegWrite;
+			controls->RegDst = 0;
+			controls->Jump = 0;
+			controls->Branch = 0;
+			controls->MemRead = 0;
+			controls->MemtoReg = 0;
+			controls->ALUOp = 0;
+			controls->MemWrite = 0;
+			controls->ALUSrc = 1;
+			controls->RegWrite = 1;
 			break;
 
 		// Set less than imm
 		case 10:
-			controls->RegDst;
-			controls->Jump;
-			controls->Branch;
-			controls->MemRead;
-			controls->MemtoReg;
-			controls->ALUOp;
-			controls->MemWrite;
-			controls->ALUSrc;
-			controls->RegWrite;
+			controls->RegDst = 1;
+			controls->Jump = 0;
+			controls->Branch = 0;
+			controls->MemRead = 0;
+			controls->MemtoReg = 0;
+			controls->ALUOp = 2;
+			controls->MemWrite = 0;
+			controls->ALUSrc = 0;
+			controls->RegWrite = 1;
 			break;
 
 		// Set less than imm unsigned
 		case 11:
-			controls->RegDst;
-			controls->Jump;
-			controls->Branch;
-			controls->MemRead;
-			controls->MemtoReg;
-			controls->ALUOp;
-			controls->MemWrite;
-			controls->ALUSrc;
-			controls->RegWrite;
+			controls->RegDst = 1;
+			controls->Jump = 0;
+			controls->Branch = 0;
+			controls->MemRead = 0;
+			controls->MemtoReg = 0;
+			controls->ALUOp = 3;
+			controls->MemWrite = 0;
+			controls->ALUSrc = 0;
+			controls->RegWrite = 1;
 			break;
 
 		// Load upper imm
 		case 15:
-			controls->RegDst;
-			controls->Jump;
-			controls->Branch;
-			controls->MemRead;
-			controls->MemtoReg;
-			controls->ALUOp;
-			controls->MemWrite;
-			controls->ALUSrc;
-			controls->RegWrite;
+			controls->RegDst = 0;
+			controls->Jump = 0;
+			controls->Branch = 0;
+			controls->MemRead = 0;
+			controls->MemtoReg = 0;
+			controls->ALUOp = 6;
+			controls->MemWrite = 0;
+			controls->ALUSrc = 1;
+			controls->RegWrite = 1;
 			break;
 
 		// Load word
 		case 35:
 			controls->RegDst = 0;
-			controls->Jump;
+			controls->Jump = 0;
 			controls->Branch = 0;
 			controls->MemRead = 1;
 			controls->MemtoReg = 1;
-			controls->ALUOp;
+			controls->ALUOp = 0;
 			controls->MemWrite = 0;
 			controls->ALUSrc = 1;
 			controls->RegWrite = 1;
@@ -213,11 +213,11 @@ int instruction_decode(unsigned op,struct_controls *controls)
 		// Store word
 		case 43:
 			controls->RegDst = 2;
-			controls->Jump;
+			controls->Jump = 0;
 			controls->Branch = 0;
 			controls->MemRead = 0;
 			controls->MemtoReg = 2;
-			controls->ALUOp;
+			controls->ALUOp = 0;
 			controls->MemWrite = 1;
 			controls->ALUSrc = 1;
 			controls->RegWrite = 0;
@@ -365,7 +365,7 @@ void write_register(unsigned r2,unsigned r3,unsigned memdata,unsigned ALUresult,
 	unsigned data[] = {ALUresult, memdata};
 
 	// Write the appropriate data to the appropriate register.
-	Reg[registers[RegDst]] = data[MemtoReg];
+	Reg[registers[(int)RegDst]] = data[(int)MemtoReg];
 }
 
 /* PC update */
