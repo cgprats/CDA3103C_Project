@@ -58,7 +58,7 @@ int instruction_fetch(unsigned PC,unsigned *Mem,unsigned *instruction)
 {
 	/* Ensure that the instruction is word-aligned. As the instructions state,
 	 * it must have an address that is a multiple of 4. Halt if it is not.*/
-	if (!(PC % 4)) return 1;
+	if (PC % 4) return 1;
 
 	/* Get and set the instruction from the Memory array.
 	 * As explained in the FAQ doc, the decimal form of the
